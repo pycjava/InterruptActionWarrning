@@ -1,0 +1,11 @@
+## Interface: 110007
+## Title: Interrupt Action Warning
+## Title-zhCN: 打断技能提示
+## Notes: Shows warning when interrupt abilities are used
+## Notes-zhCN: 显示当打断技能被使用时的提示
+## Author: Dong
+## Version: 1.0
+## SavedVariables: InterruptActionWarrningDB
+
+# Core files
+InterruptActionWarrning.lua
