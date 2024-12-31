@@ -217,7 +217,7 @@ frame:SetScript("OnEvent", function(self, event, ...)
     if event == "PLAYER_TARGET_CHANGED" or 
        (event == "UNIT_SPELLCAST_START" and ... == "target") or
        (event == "UNIT_SPELLCAST_CHANNEL_START" and ... == "target") then
-        CheckTargetSpell()
+        CheckNearbyEnemies()
     end
 end)
 
