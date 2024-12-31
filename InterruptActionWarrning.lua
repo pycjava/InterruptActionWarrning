@@ -263,9 +263,16 @@ SlashCmdList["IAW"] = function(msg)
     -- 处理单个词命令
     if msg == "test" then
         -- 测试功能代码...
-        return
-    elseif msg == "toggle" then
-        -- 开关功能代码...
+        print("|cFF00FF00[测试打断]|r")
+        -- 发送测试喊话
+        local msg = string.format("已打断 %s 的 %s！", "测试目标", "测试法术")
+        local channel = "YELL"
+        if IsInRaid() then
+            channel = "RAID"
+        elseif IsInGroup() then
+            channel = "PARTY"
+        end
+        SendChatMessage(msg, channel)
         return
     elseif msg == "nearby" then
         PrintNearbyEnemies()
