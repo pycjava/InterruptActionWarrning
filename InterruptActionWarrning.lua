@@ -202,13 +202,13 @@ frame:SetScript("OnEvent", function(self, event, ...)
                 C_Timer.After(0.1, function()
                     Debug("尝试发送消息")
                     -- 添加颜色和频道标记
+                    -- 发送消息
+                    SendChatMessage(msg, channel)
                     local coloredMsg = string.format("|cFFFF0000[%s]|r %s", channel, msg)
+                    -- 在自己的聊天框也显示一次
                     DEFAULT_CHAT_FRAME:AddMessage(coloredMsg)
                     Debug("消息发送完成")
                 end)
-
-                -- 在自己的聊天框也显示一次
-                print("|cFFFF0000[打断]|r " .. msg)
             end
         end
     end
