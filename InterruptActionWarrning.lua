@@ -49,53 +49,54 @@ local monitoredTargets = {
     ["漫步的岩角麋"] = true
 }
 
--- 检查附近敌对单位是否在监控列表中
-local function CheckNearbyEnemies()
-    -- 扫描40码范围内的敌对单位
-    for i = 1, 40 do
-        local unit = "nameplate" .. i
-        if UnitExists(unit) and UnitCanAttack("player", unit) then
-            local name = UnitName(unit)
-            Debug("检测到附近敌对单位:", name)
-            if monitoredTargets[name] then
-                Debug("检测到附近敌对单位:", name)
-                -- 如果在监控列表中，检查其施法状态
-                local guid = UnitGUID(unit)
-                CheckTargetSpell(unit, guid)
-            end
-        end
-    end
-end
-
--- 修改检查目标施法的函数以接受单位ID参数
+-- 修改检查目标施法的函数以使用guid
 local function CheckTargetSpell(unit, guid)
-    if not unit or not UnitExists(unit) then
+    -- 首先检查目标是否在监控列表中
+    local targetName = UnitName(unit)
+    Debug("目标名称:", targetName)
+    if not targetName or not monitoredTargets[targetName] then
+        Debug("目标不在监控列表中")
         castBar:Hide()
         return
     end
-    
-    local name, text, texture, startTimeMS, endTimeMS, isTradeSkill, castID, notInterruptible = UnitCastingInfo(unit)
+    Debug("目标在监控列表中")
+    -- 使用guid获取正确的单位ID
+    local unitID = unit
+    if guid then
+        unitID = guid and UnitTokenFromGUID(guid)
+    end
+    Debug("单位ID:", unitID)
+    if not unitID then
+        Debug("单位ID不存在")
+        castBar:Hide()
+        return
+    end
+    Debug("单位ID存在")
+    local name, _, _, startTimeMS, endTimeMS = UnitCastingInfo(unitID)
     local isChanneling = false
     
     if not name then
-        name, text, texture, startTimeMS, endTimeMS, isTradeSkill, notInterruptible = UnitChannelInfo(unit)
+        name, _, _, startTimeMS, endTimeMS = UnitChannelInfo(unitID)
         isChanneling = true
     end
-    
+    Debug("施法名称:", name)
     -- 如果检测到施法或引导
-    if name and not notInterruptible then
+    if name then
+        Debug("施法名称存在")
         local startTime = startTimeMS / 1000
         local endTime = endTimeMS / 1000
         local totalTime = endTime - startTime
-        
+        Debug("施法时间:", startTime, endTime, totalTime)
         -- 更新施法条
         castBar:SetMinMaxValues(0, totalTime)
-        spellText:SetText(name)
+        spellText:SetText(targetName .. ": " .. name)  -- 显示目标名称和法术名称
         castBar:Show()
         
         -- 创建更新函数
-        local function UpdateCastBar()
-            if not UnitExists("target") then
+        local UpdateCastBar
+        UpdateCastBar = function()
+            -- 再次检查目标是否仍在监控列表中
+            if not UnitExists(unit) or not monitoredTargets[targetName] then
                 castBar:Hide()
                 return
             end
@@ -120,9 +121,29 @@ local function CheckTargetSpell(unit, guid)
             end
         end
         
-        UpdateCastBar()
+        C_Timer.After(0.1, UpdateCastBar)
     else
         castBar:Hide()
+    end
+end
+
+-- 检查附近敌对单位是否在监控列表中
+local function CheckNearbyEnemies()
+    -- 扫描40码范围内的敌对单位
+    for i = 1, 40 do
+        local unit = "nameplate" .. i
+        if UnitExists(unit) and UnitCanAttack("player", unit) then
+            local name = UnitName(unit)
+            -- local guid = UnitGUID(unit)
+            -- Debug("检测到附近敌对单位:", name)
+            -- Debug("检测到附近敌对单位:", monitoredTargets[name])
+            if monitoredTargets[name] then
+                Debug("检测到附近敌对单位:", name)
+                -- 如果在监控列表中，检查其施法状态
+                local guid = UnitGUID(unit)
+                CheckTargetSpell(unit, guid)
+            end
+        end
     end
 end
 
@@ -199,16 +220,15 @@ frame:SetScript("OnEvent", function(self, event, ...)
                 end
                 
                 -- 使用 DEFAULT_CHAT_FRAME:AddMessage 来显示消息
-                C_Timer.After(0.1, function()
+                local function sendMessage()
                     Debug("尝试发送消息")
-                    -- 添加颜色和频道标记
-                    -- 发送消息
                     SendChatMessage(msg, channel)
                     local coloredMsg = string.format("|cFFFF0000[%s]|r %s", channel, msg)
-                    -- 在自己的聊天框也显示一次
                     DEFAULT_CHAT_FRAME:AddMessage(coloredMsg)
                     Debug("消息发送完成")
-                end)
+                end
+                
+                C_Timer.After(0.1, sendMessage)
             end
         end
     end
@@ -265,7 +285,7 @@ SlashCmdList["IAW"] = function(msg)
         -- 测试功能代码...
         print("|cFF00FF00[测试打断]|r")
         -- 发送测试喊话
-        local msg = string.format("已打断 %s 的 %s！", "测试目标", "测试法术")
+        local msg = string.format("已打断 %s 的 %s!", "测试目标", "测试法术")
         local channel = "YELL"
         if IsInRaid() then
             channel = "RAID"
